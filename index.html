@@ -9,6 +9,7 @@
     <!-- Three.js r128 + OBJLoader + OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
@@ -261,7 +262,8 @@
 <script>
 /* ═══════════════════════════════════════════════════
    VISOR OBJ con Three.js
-   - OBJLoader para cargar archivos .obj
+   - MTLLoader carga el .mtl con texturas primero
+   - OBJLoader carga el .obj y aplica los materiales
    - OrbitControls para rotar con el mouse
    - Auto-centrado y escalado automático
 ═══════════════════════════════════════════════════ */
@@ -280,16 +282,20 @@ function crearVisorOBJ(containerId, loadId, fbId, objPath) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
     renderer.setClearColor(0x000000, 0);
+    renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
 
     // Iluminación
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const sun = new THREE.DirectionalLight(0xfff8e7, 1.4);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
     sun.position.set(4, 8, 6);
     scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xff6b35, 0.35);
+    const fill = new THREE.DirectionalLight(0xff6b35, 0.4);
     fill.position.set(-6, -4, -4);
     scene.add(fill);
+    const back = new THREE.DirectionalLight(0xffffff, 0.6);
+    back.position.set(0, -5, -8);
+    scene.add(back);
 
     // OrbitControls
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -298,66 +304,76 @@ function crearVisorOBJ(containerId, loadId, fbId, objPath) {
     controls.autoRotate      = true;
     controls.autoRotateSpeed = 2.0;
     controls.enableZoom      = true;
-    controls.minDistance     = 1;
-    controls.maxDistance     = 20;
 
-    // Cargar .obj
-    const loader = new THREE.OBJLoader();
-    loader.load(
-        objPath,
-        (obj) => {
-            // Centrar el modelo
-            const box    = new THREE.Box3().setFromObject(obj);
-            const center = box.getCenter(new THREE.Vector3());
-            const size   = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale  = 2.5 / maxDim;
+    // Derivar ruta del .mtl desde el .obj  (mismo nombre, misma carpeta)
+    const mtlPath = objPath.replace(/\.obj$/i, '.mtl');
 
-            obj.scale.setScalar(scale);
-            obj.position.set(
-                -center.x * scale,
-                -center.y * scale,
-                -center.z * scale
-            );
+    function montarOBJ(materials) {
+        const objLoader = new THREE.OBJLoader();
+        if (materials) {
+            materials.preload();
+            objLoader.setMaterials(materials);
+        }
+        objLoader.load(
+            objPath,
+            (obj) => {
+                // Auto-centrar y escalar
+                const box    = new THREE.Box3().setFromObject(obj);
+                const center = box.getCenter(new THREE.Vector3());
+                const size   = box.getSize(new THREE.Vector3());
+                const scale  = 2.5 / Math.max(size.x, size.y, size.z);
 
-            // Aplicar material si no tiene textura
-            obj.traverse(child => {
-                if (child.isMesh) {
-                    if (!child.material || !child.material.map) {
+                obj.scale.setScalar(scale);
+                obj.position.set(
+                    -center.x * scale,
+                    -center.y * scale,
+                    -center.z * scale
+                );
+
+                // Si alguna malla no tiene material (no había .mtl), poner uno por defecto
+                obj.traverse(child => {
+                    if (child.isMesh && (!child.material || Array.isArray(child.material) && child.material.length === 0)) {
                         child.material = new THREE.MeshStandardMaterial({
-                            color: 0xc8963e,
-                            roughness: 0.55,
-                            metalness: 0.05,
+                            color: 0xc8963e, roughness: 0.55, metalness: 0.05
                         });
                     }
-                    child.castShadow    = true;
-                    child.receiveShadow = true;
-                }
-            });
+                });
 
-            scene.add(obj);
-
-            // Posicionar cámara
-            camera.position.set(0, 0.8, 5);
-            controls.target.set(0, 0, 0);
-            controls.update();
-
-            // Mostrar canvas
-            loadEl.classList.add('hidden');
-            container.classList.remove('hidden');
-
-            // Render loop
-            (function animate() {
-                requestAnimationFrame(animate);
+                scene.add(obj);
+                camera.position.set(0, 0.8, 5);
+                controls.target.set(0, 0, 0);
                 controls.update();
-                renderer.render(scene, camera);
-            })();
-        },
-        undefined, // onProgress
-        (err) => {
-            console.warn('[OBJ] No se pudo cargar:', objPath, err);
-            loadEl.classList.add('hidden');
-            fb.classList.add('visible');
+
+                loadEl.classList.add('hidden');
+                container.classList.remove('hidden');
+
+                (function animate() {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                })();
+            },
+            undefined,
+            (err) => {
+                console.warn('[OBJ] Error:', objPath, err);
+                loadEl.classList.add('hidden');
+                fb.classList.add('visible');
+            }
+        );
+    }
+
+    // Intentar cargar el .mtl primero; si no existe, cargar el .obj solo
+    const mtlLoader = new THREE.MTLLoader();
+    // Indicar el directorio base para que encuentre las texturas (.png, .jpg)
+    const basePath = objPath.substring(0, objPath.lastIndexOf('/') + 1) || './';
+    mtlLoader.setPath(basePath);
+    mtlLoader.load(
+        mtlPath.replace(basePath, ''),
+        (materials) => montarOBJ(materials),
+        undefined,
+        ()          => {
+            console.info('[MTL] No se encontró .mtl, cargando .obj sin texturas');
+            montarOBJ(null);
         }
     );
 }
