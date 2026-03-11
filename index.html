@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,15 +7,14 @@
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
         body {
-            background-color: #1a1a1a;
+            background-color: #1a1a1a; 
             color: white;
             font-family: Arial, sans-serif;
             margin: 0;
             text-align: center;
         }
-
         .seccion-perro {
-            height: 100vh;
+            height: 100vh; 
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -25,49 +23,35 @@
             box-sizing: border-box;
             padding: 20px;
         }
-
-        /* Estilos mejorados para asegurar que el visor tenga espacio */
+        /* Ajustes del visor 3D y la animación */
         model-viewer {
             width: 100%;
             max-width: 600px;
             height: 60vh;
             background-color: transparent;
-            animation: flotar 4s ease-in-out infinite;
+            animation: flotar 4s ease-in-out infinite; 
         }
-
         /* Efecto Gravedad Cero */
         @keyframes flotar {
-            0% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-20px);
-            }
-
-            100% {
-                transform: translateY(0px);
-            }
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
         }
     </style>
 </head>
-
 <body>
 
     <div class="seccion-perro">
         <h2>Perro Sencillo</h2>
         <p>Pan, salchicha, ripio de papa y salsas - $5.000</p>
-        <model-viewer src="perro_sencillo.glb" auto-rotate camera-controls shadow-intensity="1"
-            exposure="1.2"></model-viewer>
+        <model-viewer src="perro_sencillo.glb?v=1" auto-rotate camera-controls shadow-intensity="1" exposure="1.2"></model-viewer>
     </div>
 
     <div class="seccion-perro">
         <h2>Modelo de Prueba</h2>
-        <p>Si ves este astronauta flotando, el código funciona perfecto.</p>
-        <model-viewer src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" auto-rotate camera-controls
-            shadow-intensity="1" exposure="1.2"></model-viewer>
+        <p>Si ves este astronauta flotando, el visor funciona perfecto.</p>
+        <model-viewer src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" auto-rotate camera-controls shadow-intensity="1" exposure="1.2"></model-viewer>
     </div>
 
 </body>
-
 </html>
