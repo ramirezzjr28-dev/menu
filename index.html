@@ -9,7 +9,6 @@
     <!-- Three.js r128 + OBJLoader + OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
@@ -305,15 +304,10 @@ function crearVisorOBJ(containerId, loadId, fbId, objPath) {
     controls.autoRotateSpeed = 2.0;
     controls.enableZoom      = true;
 
-    // Derivar ruta del .mtl desde el .obj  (mismo nombre, misma carpeta)
-    const mtlPath = objPath.replace(/\.obj$/i, '.mtl');
-
+    // Cargar directo el .obj sin .mtl (el .mtl no tiene texturas, solo sobreescribe con gris)
     function montarOBJ(materials) {
         const objLoader = new THREE.OBJLoader();
-        if (materials) {
-            materials.preload();
-            objLoader.setMaterials(materials);
-        }
+        // NO aplicamos el .mtl — forzamos material personalizado siempre
         objLoader.load(
             objPath,
             (obj) => {
@@ -330,15 +324,14 @@ function crearVisorOBJ(containerId, loadId, fbId, objPath) {
                     -center.z * scale
                 );
 
-                // Los .mtl no tienen imágenes de textura (exportados sin bake desde Blender)
-                // Se aplica material cálido apetitoso por código
-                const matCalido = new THREE.MeshStandardMaterial({
-                    color:     0xc87941,   // dorado pan/perro caliente
+                // Material dorado apetitoso — ignoramos el .mtl que devuelve gris
+                const mat = new THREE.MeshStandardMaterial({
+                    color:     0xc87941,
                     roughness: 0.65,
                     metalness: 0.0,
                 });
                 obj.traverse(child => {
-                    if (child.isMesh) child.material = matCalido;
+                    if (child.isMesh) child.material = mat;
                 });
 
                 scene.add(obj);
@@ -364,19 +357,8 @@ function crearVisorOBJ(containerId, loadId, fbId, objPath) {
         );
     }
 
-    // Intentar cargar el .mtl primero; si no existe, cargar el .obj solo
-    const mtlLoader = new THREE.MTLLoader();
-    const basePath = objPath.substring(0, objPath.lastIndexOf('/') + 1) || './';
-    mtlLoader.setPath(basePath);
-    mtlLoader.load(
-        mtlPath.replace(basePath, ''),
-        (materials) => montarOBJ(materials),
-        undefined,
-        ()          => {
-            console.info('[MTL] No se encontró .mtl, cargando .obj sin texturas');
-            montarOBJ(null);
-        }
-    );
+    // Llamar directo sin MTL
+    montarOBJ(null);
 }
 
 // ── Iniciar visores ──
