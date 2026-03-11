@@ -330,13 +330,21 @@ function crearVisorOBJ(containerId, loadId, fbId, objPath) {
                     -center.z * scale
                 );
 
-                // Si alguna malla no tiene material (no había .mtl), poner uno por defecto
+                // Los .mtl no tienen texturas (exportados sin bake desde Blender)
+                // Aplicamos materiales visuales atractivos por código
+                const foodMaterials = [
+                    new THREE.MeshStandardMaterial({ color: 0xc8833a, roughness: 0.7, metalness: 0.0 }), // pan dorado
+                    new THREE.MeshStandardMaterial({ color: 0xa63c1a, roughness: 0.5, metalness: 0.0 }), // salchicha
+                    new THREE.MeshStandardMaterial({ color: 0xe8d88a, roughness: 0.8, metalness: 0.0 }), // papa/ripio
+                    new THREE.MeshStandardMaterial({ color: 0xf5f0c8, roughness: 0.4, metalness: 0.0 }), // salsas
+                    new THREE.MeshStandardMaterial({ color: 0xd4522a, roughness: 0.4, metalness: 0.05 }), // tomate/ketchup
+                    new THREE.MeshStandardMaterial({ color: 0x8ab04a, roughness: 0.6, metalness: 0.0 }), // mostaza/verde
+                ];
+                let matIdx = 0;
                 obj.traverse(child => {
-                    if (child.isMesh && (!child.material || Array.isArray(child.material) && child.material.length === 0)) {
-                        child.material = new THREE.MeshStandardMaterial({
-                            color: 0xc8963e, roughness: 0.55, metalness: 0.05
-                        });
-                    }
+                    if (!child.isMesh) return;
+                    child.material = foodMaterials[matIdx % foodMaterials.length];
+                    matIdx++;
                 });
 
                 scene.add(obj);
@@ -364,7 +372,6 @@ function crearVisorOBJ(containerId, loadId, fbId, objPath) {
 
     // Intentar cargar el .mtl primero; si no existe, cargar el .obj solo
     const mtlLoader = new THREE.MTLLoader();
-    // Indicar el directorio base para que encuentre las texturas (.png, .jpg)
     const basePath = objPath.substring(0, objPath.lastIndexOf('/') + 1) || './';
     mtlLoader.setPath(basePath);
     mtlLoader.load(
