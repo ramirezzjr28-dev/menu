@@ -1,6 +1,6 @@
 # Blender 5.0.1
 # www.blender.org
-mtllib perro_sencillo.mtl
+mtllib perro_sencillo2.mtl
 o obj1
 v 0.026024 -0.000997 0.219246
 v 0.022085 -0.005161 0.222396
@@ -75862,7 +75862,7 @@ vt 0.047610 0.657230
 vt 0.047968 0.662945
 vt 0.116088 0.758261
 s 1
-usemtl mat0.002
+usemtl perrosencillo
 f 2/1/1 3/2/2 1/3/3
 f 1/3/3 3/2/2 4/4/4
 f 316/5/5 4/4/4 5/6/6
