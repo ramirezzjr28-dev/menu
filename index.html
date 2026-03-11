@@ -161,11 +161,30 @@
             animation: flotar 5s ease-in-out infinite;
         }
         .fallback .emoji { font-size: 5rem; }
+        .fallback.visible { display: flex; }
 
-        model-viewer.error + .fallback,
-        model-viewer[data-error] + .fallback {
+        /* ───── LOADING SPINNER ───── */
+        .loading-3d {
+            width: min(90vw, 520px);
+            height: 50vh;
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
         }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(255,214,10,0.15);
+            border-top-color: var(--amarillo);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-3d.hidden { display: none; }
 
         /* ───── SCROLL HINT ───── */
         .scroll-hint {
@@ -222,18 +241,19 @@
         <p class="descripcion">Pan, salchicha, ripio de papa y salsas</p>
         <p class="precio">$5.000</p>
     </div>
-    <!-- Cambia el src por la ruta de tu archivo .glb -->
+    <div class="loading-3d" id="load1"><div class="spinner"></div><span>CARGANDO MODELO...</span></div>
     <model-viewer
+        id="mv1"
         src="perro_sencillo.glb"
         alt="Perro Sencillo 3D"
         auto-rotate
         camera-controls
         shadow-intensity="1.5"
         exposure="1.3"
-        environment-image="neutral"
-        id="mv1">
+        reveal="auto"
+        style="display:none">
     </model-viewer>
-    <div class="fallback"><span class="emoji">🌭</span><span>perro_sencillo.glb</span></div>
+    <div class="fallback" id="fb1"><span class="emoji">🌭</span><span>perro_sencillo.glb</span></div>
 </section>
 
 <!-- ═══ ITEM 2 ═══ -->
@@ -245,18 +265,19 @@
         <p class="descripcion">Pan, salchicha doble, papas, queso, tocineta y salsas gourmet</p>
         <p class="precio">$8.500</p>
     </div>
-    <!-- Cambia el src por la ruta de tu archivo .glb -->
+    <div class="loading-3d" id="load2"><div class="spinner"></div><span>CARGANDO MODELO...</span></div>
     <model-viewer
+        id="mv2"
         src="perro_especial.glb"
         alt="Perro Especial 3D"
         auto-rotate
         camera-controls
         shadow-intensity="1.5"
         exposure="1.3"
-        environment-image="neutral"
-        id="mv2">
+        reveal="auto"
+        style="display:none">
     </model-viewer>
-    <div class="fallback"><span class="emoji">🌭</span><span>perro_especial.glb</span></div>
+    <div class="fallback" id="fb2"><span class="emoji">🌭</span><span>perro_especial.glb</span></div>
 </section>
 
 <!-- ═══ ITEM 3 — TEST con modelo externo ═══ -->
@@ -268,16 +289,19 @@
         <p class="descripcion">Si ves este modelo flotando, el visor funciona perfecto ✅</p>
         <p class="precio">Gratis</p>
     </div>
+    <div class="loading-3d" id="load3"><div class="spinner"></div><span>CARGANDO MODELO...</span></div>
     <model-viewer
+        id="mv3"
         src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
         alt="Astronauta 3D"
         auto-rotate
         camera-controls
         shadow-intensity="1.5"
         exposure="1.3"
-        environment-image="neutral">
+        reveal="auto"
+        style="display:none">
     </model-viewer>
-    <div class="fallback"><span class="emoji">👨‍🚀</span><span>Error de red</span></div>
+    <div class="fallback" id="fb3"><span class="emoji">👨‍🚀</span><span>Error de red</span></div>
 </section>
 
 <div class="scroll-hint">
@@ -286,11 +310,56 @@
 </div>
 
 <script>
-    /* ── Detectar error en los model-viewer locales ── */
-    document.querySelectorAll('model-viewer').forEach(mv => {
-        mv.addEventListener('error', () => {
-            mv.setAttribute('data-error', 'true');
-        });
+    /* ══════════════════════════════════════════════
+       CARGA ROBUSTA DE MODELOS .GLB
+       1. Hace fetch() para verificar que el archivo existe
+       2. Si existe → muestra el model-viewer
+       3. Si no     → muestra el fallback
+    ══════════════════════════════════════════════ */
+    async function cargarModelo(mvId, loadId, fbId) {
+        const mv      = document.getElementById(mvId);
+        const loader  = document.getElementById(loadId);
+        const fb      = document.getElementById(fbId);
+        const src     = mv.getAttribute('src');
+
+        // Para URLs externas no hacemos fetch (CORS), montamos directo
+        if (src.startsWith('http')) {
+            loader.classList.add('hidden');
+            mv.style.display = '';
+            mv.addEventListener('error', () => {
+                mv.style.display = 'none';
+                fb.classList.add('visible');
+            });
+            return;
+        }
+
+        try {
+            const res = await fetch(src, { method: 'HEAD' });
+            if (!res.ok) throw new Error('not found');
+
+            // Archivo existe → mostrar visor
+            loader.classList.add('hidden');
+            mv.style.display = '';
+
+            // Por si acaso el modelo falla al parsear
+            mv.addEventListener('error', () => {
+                mv.style.display = 'none';
+                fb.classList.add('visible');
+            });
+
+        } catch {
+            // Archivo no existe o error de red
+            loader.classList.add('hidden');
+            fb.classList.add('visible');
+            console.warn(`[menu] No se pudo cargar: ${src}`);
+        }
+    }
+
+    // Esperar a que model-viewer esté definido antes de intentar cargar
+    customElements.whenDefined('model-viewer').then(() => {
+        cargarModelo('mv1', 'load1', 'fb1');
+        cargarModelo('mv2', 'load2', 'fb2');
+        cargarModelo('mv3', 'load3', 'fb3');
     });
 
     /* ── Ocultar scroll hint al llegar al final ── */
