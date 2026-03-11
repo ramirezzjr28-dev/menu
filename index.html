@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú - Perros Calientes</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <style>
+        body {
+            background-color: #222;
+            /* Fondo oscuro moderno */
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            text-align: center;
+        }
+
+        /* Cada sección ocupa el 100% de la pantalla del celular */
+        .seccion-perro {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 2px dashed #555;
+        }
+
+        model-viewer {
+            width: 100%;
+            height: 50%;
+            /* Aquí está la magia de la gravedad cero */
+            animation: flotar 4s ease-in-out infinite;
+        }
+
+        @keyframes flotar {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-25px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="seccion-perro">
+        <h2>Perro Sencillo</h2>
+        <p>Pan, salchicha, ripio de papa y salsas - $5.000</p>
+        <model-viewer src="perro_sencillo.glb" auto-rotate camera-controls environment-image="neutral"
+            shadow-intensity="1"></model-viewer>
+    </div>
+
+    <div class="seccion-perro">
+        <h2>Perro Especial</h2>
+        <p>Con tocineta y queso fundido - $8.000</p>
+        <model-viewer src="perro_especial.glb" auto-rotate camera-controls environment-image="neutral"
+            shadow-intensity="1"></model-viewer>
+    </div>
+
+</body>
+
+</html>
